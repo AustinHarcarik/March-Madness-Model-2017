@@ -4,21 +4,25 @@ Austin Harcarik
 3/15/2017
 
 Introduction:
+=============
+
 Rather than filling out my bracket with my gut this year, I decided to make a model and see how it does. The goal of this study is to model the score difference of any game (team a - team b) using data from the 2016-2017 NCAA basketball season. The data used in this study is from a Kaggle competition. There are about 5400 games and 351 teams in the dataset. Because of my strange obsession with Andrew Gelman, I had to make a bayesian hierarchical model.
 
 Model:
+======
+
 This model has two main assumptions:
 - each team has some 'true talent level'
 - each team has some 'true home court advantage'
 
-The score differential in game *i*, denoted as *y*<sub>*i*</sub> is modeled as a normal distribution:
-*y*<sub>*i*</sub> *N*(*a*<sub>*h**o**m**e*</sub> − *a*<sub>*a**w**a**y*</sub> + *b*<sub>*h**o**m**e*</sub>, *σ*<sub>*y*</sub>)
+The score differential in game *i*, denoted as *y*<sub>*i*</sub> is modeled as a student-t distribution with 7 degrees of freedom to allow for outliers (per Andrew Gelman's recommendation):
+*y*<sub>*i*</sub> *t*<sub>7</sub>(*a*<sub>*h**o**m**e*</sub> − *a*<sub>*a**w**a**y*</sub> + *b*<sub>*h**o**m**e*</sub>, *σ*<sub>*y*</sub>)
 where *a*<sub>*h**o**m**e*</sub> and *a*<sub>*a**w**a**y*</sub> are the true talent levels of the home and away teams, respectively, and *b*<sub>*h**o**m**e*</sub> is the home court advantage for the home team. I assume a hierarchical structure for both the true talents and true home court advantages:
 *a*<sub>*h**o**m**e*</sub>, *a*<sub>*a**w**a**y*</sub> *N*(0, *τ*<sub>*a*</sub>)
-*τ*<sub>*a*</sub> *U**n**i**f*(0, 12)
+*τ*<sub>*a*</sub> *U**n**i**f*(0, 14)
 *b*<sub>*h**o**m**e*</sub> *N*(0, *τ*<sub>*b*</sub>)
-*τ*<sub>*b*</sub> *U**n**i**f*(0, 5)
-*σ*<sub>*y*</sub> *U**n**i**f*(0, 25)
+*τ*<sub>*b*</sub> *U**n**i**f*(0, 7)
+*σ*<sub>*y*</sub> *U**n**i**f*(0, 20)
 
 I tried to stick with noninformative priors, but I did limit the parameter space pretty significantly. I believe this to be justified since we have a pretty good idea of how basketball scores are distributed. Moreover, we expect the home court advantage distribution from which each team's home court advantage is drawn to be noticeably less variable than the true talent distribution.
 
@@ -127,16 +131,16 @@ write(x="
       }
       
       model {
-      tau_a ~ uniform(0,12);
-      tau_b ~ uniform(0,5);
-      sigma_y ~ uniform(0,25);
+      tau_a ~ uniform(0,14);
+      tau_b ~ uniform(0,7);
+      sigma_y ~ uniform(0,20);
       a ~ normal(0,tau_a);
       b ~ normal(0,tau_b);
       for (i in 1:ngames) {
       if (is_home[i] == 1) {
-      score_diff[i] ~ normal(a[team1[i]]-a[team2[i]] + b[team1[i]],sigma_y);
+      score_diff[i] ~ student_t(7,a[team1[i]]-a[team2[i]] + b[team1[i]],sigma_y);
       } else {
-      score_diff[i] ~ normal(a[team1[i]]-a[team2[i]],sigma_y);
+      score_diff[i] ~ student_t(7,a[team1[i]]-a[team2[i]],sigma_y);
       }
       } 
       } 
@@ -163,19 +167,19 @@ print(fit, digits=1)
     ## post-warmup draws per chain=1000, total post-warmup draws=4000.
     ## 
     ##             mean se_mean   sd     2.5%      25%      50%      75%    97.5%
-    ## tau_a        9.2     0.0  0.4      8.5      8.9      9.2      9.4     10.0
-    ## tau_b        4.1     0.0  0.3      3.6      3.9      4.1      4.3      4.7
-    ## sigma_y     10.4     0.0  0.1     10.2     10.4     10.4     10.5     10.6
-    ## a[1]        -8.4     0.0  2.5    -13.1    -10.1     -8.4     -6.8     -3.6
-    ## a[2]        -4.2     0.0  2.4     -8.8     -5.8     -4.2     -2.7      0.4
-    ## a[3]         4.6     0.0  2.2      0.2      3.0      4.6      6.0      9.0
-    ## a[4]        10.0     0.0  2.3      5.6      8.4     10.0     11.5     14.5
-    ## a[5]       -23.0     0.0  2.3    -27.4    -24.5    -23.0    -21.4    -18.5
-    ## a[6]       -15.5     0.0  2.2    -19.9    -17.0    -15.6    -14.1    -11.1
-    ## a[7]         2.1     0.0  2.3     -2.3      0.6      2.1      3.5      6.5
+    ## tau_a        9.1     0.0  0.4      8.3      8.8      9.1      9.3      9.9
+    ## tau_b        4.1     0.0  0.3      3.6      3.9      4.1      4.3      4.6
+    ## sigma_y      9.1     0.0  0.1      8.8      9.0      9.1      9.1      9.3
+    ## a[1]        -8.0     0.0  2.5    -12.8     -9.6     -8.0     -6.3     -3.1
+    ## a[2]        -4.2     0.0  2.4     -8.8     -5.8     -4.2     -2.6      0.7
+    ## a[3]         4.8     0.0  2.2      0.5      3.3      4.8      6.2      9.1
+    ## a[4]        10.0     0.0  2.3      5.7      8.5     10.0     11.6     14.6
+    ## a[5]       -22.3     0.0  2.3    -26.9    -23.8    -22.3    -20.7    -17.7
+    ## a[6]       -16.0     0.0  2.1    -20.1    -17.4    -16.0    -14.7    -11.8
+    ## a[7]         1.9     0.0  2.2     -2.5      0.5      1.9      3.3      6.2
     ##         n_eff Rhat
     ## tau_a    4000    1
-    ## tau_b    2347    1
+    ## tau_b    2343    1
     ## sigma_y  4000    1
     ## a[1]     4000    1
     ## a[2]     4000    1
@@ -186,7 +190,7 @@ print(fit, digits=1)
     ## a[7]     4000    1
     ##  [ reached getOption("max.print") -- omitted 696 rows ]
     ## 
-    ## Samples were drawn using NUTS(diag_e) at Wed Mar 15 14:07:30 2017.
+    ## Samples were drawn using NUTS(diag_e) at Wed Mar 15 19:01:48 2017.
     ## For each parameter, n_eff is a crude measure of effective sample size,
     ## and Rhat is the potential scale reduction factor on split chains (at 
     ## convergence, Rhat=1).
@@ -213,16 +217,16 @@ head(final_results, 10)
 ```
 
     ##    Team_Id Team_Num True_Talent Home_Advantage      Team_Name
-    ## 1     1211      105    24.46644       1.666877        Gonzaga
-    ## 2     1437      326    22.28443       1.321377      Villanova
-    ## 3     1452      339    20.75434       4.793773  West Virginia
-    ## 4     1246      139    20.70029       3.501759       Kentucky
-    ## 5     1196       90    20.28025       1.793546        Florida
-    ## 6     1257      150    19.90993       3.545274     Louisville
-    ## 7     1314      205    19.82684       7.187764 North Carolina
-    ## 8     1181       75    19.48854       2.360880           Duke
-    ## 9     1242      135    19.08098       3.701443         Kansas
-    ## 10    1438      327    18.80610       3.617273       Virginia
+    ## 1     1211      105    23.92243       2.588192        Gonzaga
+    ## 2     1437      326    21.86853       1.780859      Villanova
+    ## 3     1246      139    20.05714       3.712186       Kentucky
+    ## 4     1196       90    19.79564       1.426618        Florida
+    ## 5     1452      339    19.77969       4.911934  West Virginia
+    ## 6     1438      327    19.02029       3.490241       Virginia
+    ## 7     1181       75    18.98760       1.871375           Duke
+    ## 8     1314      205    18.89915       7.449634 North Carolina
+    ## 9     1242      135    18.80910       3.545610         Kansas
+    ## 10    1257      150    18.22033       4.876177     Louisville
 
 ``` r
 # who has the best home court advantage?
@@ -232,16 +236,16 @@ head(final_results, 10)
 ```
 
     ##    Team_Id Team_Num True_Talent Home_Advantage       Team_Name
-    ## 1     1199       93  14.4023529       9.309961      Florida St
-    ## 2     1393      283   8.0559484       9.278913        Syracuse
-    ## 3     1427      317  -8.1434014       7.941696  UT San Antonio
-    ## 4     1456      343  -0.9620475       7.333401  William & Mary
-    ## 5     1314      205  19.8268369       7.187764  North Carolina
-    ## 6     1411      301  -4.1183685       6.380223     TX Southern
-    ## 7     1332      222  16.3128723       6.338411          Oregon
-    ## 8     1249      142  -6.2881963       6.313845           Lamar
-    ## 9     1433      322   8.7009537       6.312914 VA Commonwealth
-    ## 10    1455      342  17.8906752       6.275828      Wichita St
+    ## 1     1393      283    7.941484      10.461703        Syracuse
+    ## 2     1199       93   14.552697       8.264464      Florida St
+    ## 3     1427      317   -8.386025       7.934709  UT San Antonio
+    ## 4     1456      343   -1.116030       7.767891  William & Mary
+    ## 5     1314      205   18.899146       7.449634  North Carolina
+    ## 6     1249      142   -5.961792       6.417195           Lamar
+    ## 7     1288      181  -13.638479       6.348573       Morgan St
+    ## 8     1433      322    8.578758       6.248512 VA Commonwealth
+    ## 9     1411      301   -3.826920       6.174610     TX Southern
+    ## 10    1153       47   14.641938       6.131684      Cincinnati
 
 ``` r
 # function to make probabilistic predictions
@@ -258,19 +262,19 @@ predict_matchup <- function(high_seed_team, low_seed_team) {
 predict_matchup("Duke", "Troy")
 ```
 
-    ## probability that Duke beats Troy : 0.9534961
+    ## probability that Duke beats Troy : 0.9697481
 
 ``` r
 predict_matchup("Arkansas", "Seton Hall")
 ```
 
-    ## probability that Arkansas beats Seton Hall : 0.5442438
+    ## probability that Arkansas beats Seton Hall : 0.5451734
 
 ``` r
 predict_matchup("Notre Dame", "Princeton")
 ```
 
-    ## probability that Notre Dame beats Princeton : 0.7904643
+    ## probability that Notre Dame beats Princeton : 0.8174829
 
 Vallidation:
 I will now make predictions on this season's data and look at the residuals.
@@ -300,22 +304,21 @@ p1 <- ggplot(mydata, aes(residual))
 p1 + geom_histogram(bandwidth=5, fill='red')
 ```
 
-    ## Warning: Ignoring unknown parameters: bandwidth
-
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](Bayesian_March_Madness_files/figure-markdown_github/validation-1.png)
+![](Bayesian_March_Madness_Final_files/figure-markdown_github/validation-1.png)
 
 ``` r
 p2 <- ggplot(mydata, aes(preds, residual))
 p2 + geom_point() + geom_abline(slope=0, intercept=0, color='red')
 ```
 
-![](Bayesian_March_Madness_files/figure-markdown_github/validation-2.png)
+![](Bayesian_March_Madness_Final_files/figure-markdown_github/validation-2.png)
 
 ``` r
 rmse <- sqrt(mean(mydata$residual^2))
 cat('Root Mean Squared Error:', rmse)
 ```
 
-    ## Root Mean Squared Error: 9.91047
+    ## Root Mean Squared Error: 9.948494
+    
+![Residuals](/validation-1.png)
+![Residual_Plot](/validation-2.png)
