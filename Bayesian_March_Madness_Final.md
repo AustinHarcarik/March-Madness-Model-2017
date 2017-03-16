@@ -15,14 +15,7 @@ This model has two main assumptions:
 - each team has some 'true talent level'
 - each team has some 'true home court advantage'
 
-The score differential in game *i*, denoted as *y*<sub>*i*</sub> is modeled as a student-t distribution with 7 degrees of freedom to allow for outliers (per Andrew Gelman's recommendation):
-*y*<sub>*i*</sub> *t*<sub>7</sub>(*a*<sub>*h**o**m**e*</sub> − *a*<sub>*a**w**a**y*</sub> + *b*<sub>*h**o**m**e*</sub>, *σ*<sub>*y*</sub>)
-where *a*<sub>*h**o**m**e*</sub> and *a*<sub>*a**w**a**y*</sub> are the true talent levels of the home and away teams, respectively, and *b*<sub>*h**o**m**e*</sub> is the home court advantage for the home team. I assume a hierarchical structure for both the true talents and true home court advantages:
-*a*<sub>*h**o**m**e*</sub>, *a*<sub>*a**w**a**y*</sub> *N*(0, *τ*<sub>*a*</sub>)
-*τ*<sub>*a*</sub> *U**n**i**f*(0, 14)
-*b*<sub>*h**o**m**e*</sub> *N*(0, *τ*<sub>*b*</sub>)
-*τ*<sub>*b*</sub> *U**n**i**f*(0, 7)
-*σ*<sub>*y*</sub> *U**n**i**f*(0, 20)
+The score differential in game *i*, denoted as *y*<sub>*i*</sub> is modeled as a student-t distribution with 7 degrees of freedom to allow for outliers (per Andrew Gelman’s recommendation): *y*<sub>*i*</sub> *t*<sub>7</sub>(*a*<sub>*h**o**m**e*</sub> − *a*<sub>*a**w**a**y*</sub> + *b*<sub>*h**o**m**e*</sub>, *σ*<sub>*y*</sub>) where *a*<sub>*h**o**m**e*</sub> and *a*<sub>*a**w**a**y*</sub> are the true talent levels of the home and away teams, respectively, and *b*<sub>*h**o**m**e*</sub> is the home court advantage for the home team. I assume a hierarchical structure for both the true talents and true home court advantages: *a*<sub>*h**o**m**e*</sub>, *a*<sub>*a**w**a**y*</sub> *N*(0, *τ*<sub>*a*</sub>) *τ*<sub>*a*</sub> *U**n**i**f*(0, 14) *b*<sub>*h**o**m**e*</sub> *N*(0, *τ*<sub>*b*</sub>) *τ*<sub>*b*</sub> *U**n**i**f*(0, 7) *σ*<sub>*y*</sub> *U**n**i**f*(0, 20)
 
 I tried to stick with noninformative priors, but I did limit the parameter space pretty significantly. I believe this to be justified since we have a pretty good idea of how basketball scores are distributed. Moreover, we expect the home court advantage distribution from which each team's home court advantage is drawn to be noticeably less variable than the true talent distribution.
 
